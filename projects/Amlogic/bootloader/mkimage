@@ -1,0 +1,65 @@
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2022-present JELOS (https://github.com/JustEnoughLinuxOS)
+
+mkimage_uboot() {
+if [ -f "${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_u-boot" ]; then
+  echo "image: writing u-boot to $(basename ${DISK})..."
+  dd if="${RELEASE_DIR}/3rdparty/bootloader/${SUBDEVICE}_u-boot" of="${DISK}" bs=512 seek=1 conv=sync,noerror,notrunc >"${SAVE_ERROR}" 2>&1 || show_error
+fi
+}
+
+mkimage_bootini() {
+  echo "image: copying boot.ini..."
+  cp -p "${RELEASE_DIR}/3rdparty/bootloader/boot.ini" "${LE_TMP}/boot.ini"
+  sed -e "s/@UUID_SYSTEM@/${UUID_SYSTEM}/" \
+      -e "s/@UUID_STORAGE@/${UUID_STORAGE}/" \
+      -e "s/@EXTRA_CMDLINE@/${EXTRA_CMDLINE}/" \
+      -i "${LE_TMP}/boot.ini"
+  mcopy "${LE_TMP}/boot.ini" ::
+}
+
+mkimage_extlinux() {
+  echo "image: copying exlinux.conf..."
+  mkdir -p "${LE_TMP}/extlinux"
+  cp -p "${RELEASE_DIR}/3rdparty/bootloader/extlinux/extlinux.conf" "${LE_TMP}/extlinux/extlinux.conf"
+  sed -e "s/@UUID_SYSTEM@/${UUID_SYSTEM}/" \
+      -e "s/@UUID_STORAGE@/${UUID_STORAGE}/" \
+      -e "s/@EXTRA_CMDLINE@/${EXTRA_CMDLINE}/" \
+      -i "${LE_TMP}/extlinux/extlinux.conf"
+  mcopy "${LE_TMP}/extlinux" ::
+}
+
+mkimage_dtb() {
+  echo "image: copying device trees..."
+  for dtb in ${DTB[@]}; do
+    mcopy ${RELEASE_DIR}/3rdparty/bootloader/${dtb}.dtb ::
+  done
+}
+
+mkimage_gou_extras() {
+  echo "image: copying ODROIDBIOS.BIN and res..."
+  mcopy ${RELEASE_DIR}/3rdparty/bootloader/ODROIDBIOS.BIN ::
+  mcopy ${RELEASE_DIR}/3rdparty/bootloader/res ::
+}
+
+case "${SUBDEVICE}" in
+  Odroid_GOU)
+    DTB=("meson-g12b-odroid-go-ultra" "meson-g12b-powkiddy-rgb10-max-3-pro")
+    mkimage_dtb
+    mkimage_bootini
+    mkimage_gou_extras
+    mkimage_uboot
+    ;;
+  Odroid_N2)
+    DTB=("meson-g12b-odroid-n2" "meson-g12b-odroid-n2-plus")
+    mkimage_dtb
+    mkimage_extlinux
+    mkimage_uboot
+    ;;
+  Odroid_N2L)
+    DTB=("meson-g12b-odroid-n2l")
+    mkimage_dtb
+    mkimage_extlinux
+    mkimage_uboot
+    ;;
+esac

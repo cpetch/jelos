@@ -1,0 +1,12 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+
+###
+### Fan Control now redirects to the quirk device/bin/fancontrol
+### so we don't need to have multiple variants in /usr/bin.
+###
+
+. /etc/profile
+
+"/usr/lib/autostart/quirks/devices/${QUIRK_DEVICE}/bin/fancontrol" $*

@@ -1,0 +1,87 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-2.0
+# Copyright (C) 2023 JELOS (https://github.com/JustEnoughLinuxOS)
+
+. /etc/profile
+
+###
+### On startup the device will run at the maximum TDP that
+### the CPU is capable of.  This is not desired behavior.
+###
+### 1. Check if we have a TDP setting, and set it.
+### 2. Check if we have a device default TDP, and set it.
+### 3. Use a common TDP down value used across multiple AMD CPUs.
+###
+if [ $# -eq 0 ] || [ "$1" == "boot" ]
+then
+  PROFILE=$(get_setting system.overclock)
+  if [ -n "${PROFILE}" ]
+  then
+    PROFILE="${PROFILE}"
+  else
+    if [ -n "${DEVICE_BASE_TDP}" ]
+    then
+      PROFILE="${DEVICE_BASE_TDP}"
+    else
+      PROFILE="15w"
+    fi
+  fi
+else
+  ### When run from ES or a shell, and the value of "off"
+  ### is passed, go back to the default TDP.  If not available
+  ### use our default of 15w.
+  PROFILE=$1
+  if [ "${PROFILE}" = "off" ]
+  then
+    if [ -n "${DEVICE_BASE_TDP}" ]
+    then
+      PROFILE="${DEVICE_BASE_TDP}"
+    else
+      PROFILE="15w"
+    fi
+  fi
+fi
+
+case ${PROFILE} in
+  2.5w)
+    WATTS="2500"
+  ;;
+  4.5w)
+    WATTS="4500"
+  ;;
+  6w)
+    WATTS="6000"
+  ;;
+  9w)
+    WATTS="9000"
+  ;;
+  12w)
+    WATTS="12000"
+  ;;
+  15w)
+    WATTS="15000"
+  ;;
+  16w)
+    WATTS="16000"
+  ;;
+  18w)
+    WATTS="18000"
+  ;;
+  22w)
+    WATTS="22000"
+  ;;
+  24w)
+    WATTS="24000"
+  ;;
+  28w)
+    WATTS="28000"
+  ;;
+  30w)
+    WATTS="30000"
+  ;;
+  *)
+    WATTS="${PROFILE}"
+  ;;
+esac
+
+ryzenadj --tctl-temp=97 --stapm-limit=${WATTS} --fast-limit=${WATTS} --stapm-time=500 --slow-limit=${WATTS} --slow-time=30 --vrmmax-current=70000
